@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tests and benchmarks</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('si-theme'); } catch (e) {}
+      if (!t && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+      document.documentElement.setAttribute('data-theme', t || 'light');
+    })();
+  </script>
+</head>
+<body class="tests-page">
+  <main class="content">
+    <p style="margin-bottom:18px"><a href="index.html">Back to the app</a></p>
+    <h1>Tests and benchmarks</h1>
+    <p class="muted" style="margin:6px 0 24px">Evidence for testing: unit tests check the rules, benchmarks measure running time as the data grows.</p>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>Unit tests</h2><p class="muted">Heap, products, batches, selling, expiry and saving.</p></div>
+        <div class="test-summary"><span class="badge neutral" id="test-badge">Running</span><button type="button" class="btn ghost" id="btn-rerun">Run again</button></div>
+      </div>
+      <div id="test-list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>Benchmarks</h2><p class="muted">Median of several runs, in milliseconds. Lower is faster. Results depend on your device.</p></div>
+        <button type="button" class="btn primary" id="btn-bench">Run benchmarks</button>
+      </div>
+      <div class="table-wrap"><table class="bench" id="bench-table" hidden></table></div>
+      <p class="pad-msg panel-pad muted" id="bench-msg">Press the button. The largest size takes a few seconds.</p>
+    </section>
+  </main>
+
+  <script src="js/structures.js"></script>
+  <script src="js/inventory.js"></script>
+  <script src="js/tests.js"></script>
+  <script>
+    (function () {
+      var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+
+      function showTests() {
+        var results = StoreTests.runTests(), html = '', group = '';
+        results.forEach(function (r) {
+          if (r.group !== group) { group = r.group; html += '<div class="test-group">' + esc(group) + '</div>'; }
+          html += '<div class="test-row"><span class="badge ' + (r.pass ? 'ok' : 'bad') + '">' + (r.pass ? 'Pass' : 'Fail') + '</span><span>' +
+                  esc(r.name) + (r.pass ? '' : '<span class="err">' + esc(r.error) + '</span>') + '</span></div>';
+        });
+        document.getElementById('test-list').innerHTML = html + '<div style="height:12px"></div>';
+        var passed = results.filter(function (r) { return r.pass; }).length;
+        var badge = document.getElementById('test-badge');
+        badge.textContent = passed + ' of ' + results.length + ' passed';
+        badge.className = 'badge ' + (passed === results.length ? 'ok' : 'bad');
+      }
+
+      function showBench() {
+        var btn = document.getElementById('btn-bench'), msg = document.getElementById('bench-msg');
+        btn.disabled = true; msg.hidden = false; msg.textContent = 'Running. The page may pause for a few seconds.';
+        setTimeout(function () {
+          var res = StoreTests.runBenchmarks(), sizes = res.sizes, last = sizes[sizes.length - 1];
+          var head = '<thead><tr><th>Operation</th><th>Growth</th>' + sizes.map(function (n) { return '<th class="num">n = ' + n.toLocaleString() + '</th>'; }).join('') + '</tr></thead>';
+          var maxLast = Math.max.apply(null, res.rows.map(function (r) { return r.ms[last]; }));
+          var body = res.rows.map(function (r) {
+            var cells = sizes.map(function (n) {
+              var w = Math.max(1, Math.round(r.ms[n] / maxLast * 100));
+              return '<td class="num">' + r.ms[n].toFixed(2) + ' ms<div class="bar' + (r.ms[n] / maxLast > 0.5 ? ' slow' : '') + '" style="width:' + w + '%"></div></td>';
+            }).join('');
+            return '<tr><td>' + esc(r.label) + '</td><td class="mono">' + esc(r.big) + '</td>' + cells + '</tr>';
+          }).join('');
+          var t = document.getElementById('bench-table');
+          t.innerHTML = head + '<tbody>' + body + '</tbody>'; t.hidden = false;
+          msg.textContent = 'Bars are scaled to the slowest result at n = ' + last.toLocaleString() + '. Read across a row: how does the time grow when n is 10 times bigger?';
+          btn.disabled = false; btn.textContent = 'Run again';
+        }, 60);
+      }
+
+      document.getElementById('btn-rerun').addEventListener('click', showTests);
+      document.getElementById('btn-bench').addEventListener('click', showBench);
+      showTests();
+    })();
+  </script>
+</body>
+</html>

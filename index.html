@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0b1a36">
+  <title>Store Inventory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    /* apply the saved theme before first paint to avoid a flash */
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('si-theme'); } catch (e) {}
+      if (!t && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+      document.documentElement.setAttribute('data-theme', t || 'light');
+    })();
+  </script>
+</head>
+<body>
+<div class="app" id="app-shell">
+
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <div class="brand">
+      <div class="brand-copy">
+        <div class="brand-marquee">
+          <span class="brand-text brand-scroll" id="brand-name" contenteditable="true" spellcheck="false" role="textbox" aria-label="Store name" title="Click to edit store name">Store Inventory</span>
+        </div>
+        <div class="brand-marquee brand-marquee-sub">
+          <span class="brand-sub nav-label brand-scroll" id="brand-sub" contenteditable="true" spellcheck="false" role="textbox" aria-label="Store tagline" title="Click to edit tagline">Mini-grocery POS</span>
+        </div>
+      </div>
+      <button type="button" class="icon-btn collapse-btn" id="btn-collapse" aria-label="Collapse sidebar" title="Collapse sidebar"><i data-icon="chevron-left"></i></button>
+    </div>
+    <nav class="nav">
+      <p class="nav-group-label">Operations</p>
+      <button type="button" class="nav-item active" data-view="inventory" title="Inventory">
+        <i data-icon="layers"></i><span class="nav-label">Inventory</span>
+      </button>
+      <button type="button" class="nav-item" data-view="billing" title="Billing">
+        <i data-icon="cart"></i><span class="nav-label">Billing</span>
+      </button>
+      <button type="button" class="nav-item" data-view="expiry" title="Expiry">
+        <i data-icon="clock"></i><span class="nav-label">Expiry</span>
+        <span class="nav-badge" id="nav-expiry-badge" hidden>0</span>
+      </button>
+      <p class="nav-group-label">Money</p>
+      <button type="button" class="nav-item" data-view="utang" title="Utang">
+        <i data-icon="handshake"></i><span class="nav-label">Utang</span>
+        <span class="nav-badge warn" id="nav-utang-badge" hidden>0</span>
+      </button>
+      <button type="button" class="nav-item" data-view="finance" title="Finance">
+        <i data-icon="trend"></i><span class="nav-label">Finance</span>
+      </button>
+      <p class="nav-group-label">Settings</p>
+      <button type="button" class="nav-item" id="btn-appearance" title="Appearance">
+        <i data-icon="sun"></i><span class="nav-label">Appearance</span>
+      </button>
+    </nav>
+    <div class="sidebar-foot">
+      <p class="foot-label">Backup</p>
+      <button type="button" class="side-btn" id="btn-export" title="Export JSON"><i data-icon="download"></i><span class="nav-label">Export</span></button>
+      <button type="button" class="side-btn" id="btn-import" title="Import JSON"><i data-icon="upload"></i><span class="nav-label">Import</span></button>
+      <button type="button" class="side-btn" id="btn-reset" title="Reset sample data"><i data-icon="reset"></i><span class="nav-label">Reset sample</span></button>
+      <a class="side-btn" href="tests.html" target="_blank" rel="noopener" title="Tests"><i data-icon="flask"></i><span class="nav-label">Tests</span></a>
+      <input type="file" id="file-import" accept="application/json,.json" hidden>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button type="button" class="icon-btn boxed menu-btn" id="btn-menu" aria-label="Open navigation"><i data-icon="menu"></i></button>
+        <h1 id="page-title">Inventory</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="notif-wrap" id="notif-wrap">
+          <button type="button" class="icon-btn boxed notif-btn" id="btn-notif-quick" aria-label="Alerts" title="Open alerts" aria-expanded="false" aria-controls="notif-panel">
+            <i data-icon="bell"></i>
+            <span class="dot-badge" id="top-alert-dot" hidden></span>
+            <span class="notif-count" id="top-alert-count" hidden>0</span>
+          </button>
+          <div class="notif-panel" id="notif-panel" hidden role="region" aria-label="Notifications">
+            <div class="notif-panel-head">
+              <strong>Notifications</strong>
+              <button type="button" class="icon-btn" id="btn-notif-close" aria-label="Close notifications"><i data-icon="x"></i></button>
+            </div>
+            <div class="notif-panel-body" id="notif-panel-body">
+              <p class="notif-empty">There are currently no notifications</p>
+            </div>
+          </div>
+        </div>
+        <span class="date-chip" id="today-label"></span>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="notice" id="notice" hidden>
+        <span id="notice-text"></span>
+        <button type="button" class="icon-btn" id="notice-close" aria-label="Dismiss"><i data-icon="x"></i></button>
+      </div>
+
+      <!-- ============ INVENTORY ============ -->
+      <section id="view-inventory" class="view">
+        <div class="cards" id="summary-cards"></div>
+        <div class="grid-main">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Products</h2>
+                <p class="muted">Sellable stock leaves out expired units.</p>
+              </div>
+              <button type="button" class="btn primary" id="btn-add-product"><i data-icon="plus"></i>Add product</button>
+            </div>
+            <div class="toolbar">
+              <input type="search" id="f-search" placeholder="Search products" aria-label="Search products">
+              <select id="f-category" aria-label="Filter by category"></select>
+              <select id="f-status" aria-label="Filter by stock status">
+                <option value="">All stock levels</option>
+                <option value="ok">In stock</option>
+                <option value="low">Low stock</option>
+                <option value="out">Out of stock</option>
+              </select>
+            </div>
+            <div class="table-wrap inv-table-wrap">
+              <table class="inv-table">
+                <thead>
+                  <tr>
+                    <th class="col-product">Product</th>
+                    <th class="num col-stock">Stock</th>
+                    <th class="col-expiry">Next expiry</th>
+                    <th class="col-status">Status</th>
+                    <th class="num col-price">Price</th>
+                    <th class="col-actions"><span class="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody id="inv-body"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="inv-empty" hidden><strong>No products match</strong>Clear the search or filters, or add a new product.</div>
+          </section>
+
+          <aside class="side-panels">
+            <section class="panel watch">
+              <div class="panel-head"><div><h2>Expiring soon</h2><p class="muted" id="soon-sub"></p></div></div>
+              <div id="soon-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div><h2>Reorder list</h2><p class="muted">Low or out of sellable stock.</p></div>
+                <button type="button" class="btn ghost small" id="btn-print-reorder" title="Print reorder list"><i data-icon="printer"></i>Print</button>
+              </div>
+              <div id="reorder-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Recent activity</h2></div>
+              <ul class="activity" id="activity-list"></ul>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ============ BILLING ============ -->
+      <section id="view-billing" class="view" hidden>
+        <div class="grid-billing">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>New sale</h2>
+                <p class="muted">Type or scan a SKU and press Enter, or pick a product below.</p>
+              </div>
+            </div>
+            <div class="toolbar">
+              <input type="text" id="b-sku" placeholder="SKU, then Enter" autocomplete="off" aria-label="SKU to add to cart">
+              <input type="search" id="b-search" placeholder="Search by name" aria-label="Search products by name">
+            </div>
+            <div class="result-list" id="b-results"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head"><h2>Cart</h2><button type="button" class="btn ghost" id="btn-clear-cart">Clear cart</button></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Item</th><th class="num">Price</th><th class="num">Qty</th><th class="num">Amount</th><th></th></tr></thead>
+                <tbody id="cart-body"></tbody>
+              </table>
+            </div>
+            <div class="empty" id="cart-empty"><strong>The cart is empty</strong>Add items by SKU or from the list.</div>
+            <div class="cart-total"><span>Total</span><strong id="cart-total">0.00</strong></div>
+            <div class="cart-actions"><button type="button" class="btn primary block" id="btn-checkout">Complete sale</button></div>
+          </section>
+        </div>
+
+        <div class="grid-billing">
+          <section class="panel">
+            <div class="panel-head">
+              <div><h2>Sales slip</h2><p class="muted">An itemized record for the customer. Not an official receipt.</p></div>
+              <button type="button" class="btn ghost" id="btn-print" disabled><i data-icon="printer"></i>Print slip</button>
+            </div>
+            <div class="slip" id="slip"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><h2>Recent sales</h2></div>
+            <div id="sales-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- ============ EXPIRY WATCH ============ -->
+      <section id="view-expiry" class="view" hidden>
+        <div class="cards" id="expiry-cards"></div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Expired stock</h2>
+              <p class="muted">Expired batches cannot be sold. Pull them out to clear the shelf and record the loss.</p>
+            </div>
+            <button type="button" class="btn danger" id="btn-pullout">Pull out all expired</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Product</th><th>SKU</th><th class="num">Qty</th><th>Expired on</th><th>Overdue</th><th class="num">Value at price</th></tr></thead>
+              <tbody id="expired-body"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="expired-empty" hidden><strong>Nothing has expired</strong>Every batch on the shelf is still good.</div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Expiring soon</h2>
+              <p class="muted">Earliest first. Sell or discount these before the rest.</p>
+            </div>
+            <label class="inline" for="warn-days">Warn within <input type="number" id="warn-days" min="1" max="365" step="1"> days</label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Product</th><th>SKU</th><th class="num">Qty</th><th>Expires on</th><th>Time left</th><th class="num">Value at price</th></tr></thead>
+              <tbody id="soon-body"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="soon-empty" hidden><strong>Nothing expires soon</strong>Try a longer warning window.</div>
+        </section>
+
+        <p class="how" id="how-note"></p>
+      </section>
+
+      <!-- ============ UTANG ============ -->
+      <section id="view-utang" class="view" hidden>
+        <div class="cards" id="utang-cards"></div>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Customer credit (Utang)</h2>
+              <p class="muted">Open balances, due dates, and payment history.</p>
+            </div>
+            <div class="toolbar tight">
+              <input type="search" id="u-search" placeholder="Search customer or ID" aria-label="Search utang">
+              <select id="u-status" aria-label="Filter utang status">
+                <option value="">All</option>
+                <option value="open">Open / partial / overdue</option>
+                <option value="overdue">Overdue only</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>Customer</th><th>Sale</th><th class="num">Amount</th><th class="num">Remaining</th>
+                  <th>Due</th><th>Status</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="utang-body"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="utang-empty" hidden><strong>No utang records</strong>Complete a sale as utang to create one.</div>
+        </section>
+      </section>
+
+      <!-- ============ FINANCE ============ -->
+      <section id="view-finance" class="view" hidden>
+        <div class="cards" id="finance-cards"></div>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Performance charts</h2>
+              <p class="muted">Assets, cash flow, losses, and illustrative net gain.</p>
+            </div>
+            <div class="chart-type-toggle" role="group" aria-label="Chart type">
+              <button type="button" class="btn ghost small chart-type-btn active" data-chart-type="bar">Bar</button>
+              <button type="button" class="btn ghost small chart-type-btn" data-chart-type="line">Line</button>
+            </div>
+          </div>
+          <div class="finance-charts" id="finance-charts"></div>
+        </section>
+        <div class="grid-finance">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Financial summary</h2>
+                <p class="muted">Inventory value, credit assets, cash movement, and expired losses.</p>
+              </div>
+              <div class="action-row">
+                <button type="button" class="btn ghost small" id="btn-save-report">Save this month</button>
+                <button type="button" class="btn primary small" id="btn-compare-reports">Compare</button>
+              </div>
+            </div>
+            <div id="finance-detail" class="finance-detail"></div>
+          </section>
+        </div>
+        <section class="panel calc-bar-panel">
+          <button type="button" class="calc-bar-toggle" id="btn-calc-toggle" aria-expanded="false" aria-controls="calculator-wrap">
+            <span class="calc-bar-label"><i data-icon="tag"></i> Calculator</span>
+            <span class="calc-bar-hint muted" id="calc-bar-hint">Show</span>
+          </button>
+          <div class="calculator-wrap" id="calculator-wrap" hidden>
+            <div class="calculator" id="calculator">
+              <input type="text" id="calc-display" class="calc-display" placeholder="0" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="Calculator expression" enterkeyhint="done">
+              <div class="calc-keys">
+                <button type="button" class="calc-key" data-k="C">C</button>
+                <button type="button" class="calc-key" data-k="(">(</button>
+                <button type="button" class="calc-key" data-k=")">)</button>
+                <button type="button" class="calc-key op" data-k="/">÷</button>
+                <button type="button" class="calc-key" data-k="7">7</button>
+                <button type="button" class="calc-key" data-k="8">8</button>
+                <button type="button" class="calc-key" data-k="9">9</button>
+                <button type="button" class="calc-key op" data-k="*">×</button>
+                <button type="button" class="calc-key" data-k="4">4</button>
+                <button type="button" class="calc-key" data-k="5">5</button>
+                <button type="button" class="calc-key" data-k="6">6</button>
+                <button type="button" class="calc-key op" data-k="-">−</button>
+                <button type="button" class="calc-key" data-k="1">1</button>
+                <button type="button" class="calc-key" data-k="2">2</button>
+                <button type="button" class="calc-key" data-k="3">3</button>
+                <button type="button" class="calc-key op" data-k="+">+</button>
+                <button type="button" class="calc-key" data-k="0">0</button>
+                <button type="button" class="calc-key" data-k=".">.</button>
+                <button type="button" class="calc-key" data-k="%">%</button>
+                <button type="button" class="calc-key eq" data-k="=">=</button>
+              </div>
+              <p class="calc-result muted" id="calc-result"></p>
+            </div>
+          </div>
+        </section>
+      </section>
+    </div>
+  </main>
+</div>
+
+<dialog id="appearance-dialog" aria-labelledby="ap-title">
+  <div class="dialog-body">
+    <div class="dialog-head">
+      <div><h2 id="ap-title">Appearance</h2><p class="muted">Theme and accent color for the whole app.</p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Close"><i data-icon="x"></i></button>
+    </div>
+    <p class="form-group-title" style="border:0;padding-top:0">Mode</p>
+    <div class="theme-mode-row" id="theme-mode-row">
+      <button type="button" class="theme-mode-btn" data-mode="light">Light</button>
+      <button type="button" class="theme-mode-btn" data-mode="dark">Dark</button>
+    </div>
+    <p class="form-group-title">Accent color</p>
+    <div class="palette-grid" id="palette-grid">
+      <button type="button" class="palette-swatch" data-palette="blue" title="Blue" style="--sw: #2563eb"></button>
+      <button type="button" class="palette-swatch" data-palette="emerald" title="Emerald" style="--sw: #059669"></button>
+      <button type="button" class="palette-swatch" data-palette="violet" title="Violet" style="--sw: #7c3aed"></button>
+      <button type="button" class="palette-swatch" data-palette="amber" title="Amber" style="--sw: #d97706"></button>
+      <button type="button" class="palette-swatch" data-palette="rose" title="Rose" style="--sw: #e11d48"></button>
+      <button type="button" class="palette-swatch" data-palette="slate" title="Slate" style="--sw: #475569"></button>
+    </div>
+    <p class="form-group-title">Custom color</p>
+    <div class="custom-color-row">
+      <label class="custom-swatch-wrap" title="Color wheel">
+        <input type="color" id="custom-color-picker" value="#2563eb" aria-label="Pick a custom accent color">
+        <span class="custom-swatch-ring" id="custom-swatch-ring"></span>
+      </label>
+      <label class="field custom-hex-field">Hex
+        <input type="text" id="custom-hex-input" maxlength="7" placeholder="#7c3aed" spellcheck="false" autocomplete="off" aria-label="Accent hex code">
+      </label>
+      <button type="button" class="btn primary small" id="btn-apply-custom-color">Apply</button>
+    </div>
+    <p class="muted custom-color-hint">Use the wheel or type a hex code (e.g. <code>#8b5cf6</code>). The app tints panels, tabs, and the sidebar from your choice.</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn primary" data-close>Done</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="compare-dialog" aria-labelledby="cmp-title">
+  <div class="dialog-body compare-body">
+    <div class="dialog-head">
+      <div><h2 id="cmp-title">Compare reports</h2><p class="muted">Pick two monthly snapshots to compare side by side.</p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Close"><i data-icon="x"></i></button>
+    </div>
+    <div class="form-grid">
+      <label class="field">Report A
+        <select id="cmp-a" aria-label="First report"></select>
+      </label>
+      <label class="field">Report B
+        <select id="cmp-b" aria-label="Second report"></select>
+      </label>
+    </div>
+    <div id="compare-result" class="compare-result"></div>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close>Close</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ============ DIALOGS ============ -->
+<dialog id="product-dialog" aria-labelledby="pd-title">
+  <form id="product-form" class="dialog-body" novalidate>
+    <div class="dialog-head">
+      <div><h2 id="pd-title">Add product</h2><p class="muted" id="pd-sub"></p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Close"><i data-icon="x"></i></button>
+    </div>
+    <div class="form-grid">
+      <label class="field full">Product name<input id="pd-name" type="text" autocomplete="off" required></label>
+      <label class="field">Category<input id="pd-category" type="text" list="category-options" autocomplete="off" placeholder="e.g. Alcohol" required></label>
+      <label class="field">SKU <span class="muted" style="font-weight:400">(auto)</span>
+        <input id="pd-sku" type="text" autocomplete="off" readonly class="sku-readonly" placeholder="Set category first">
+      </label>
+      <label class="field">Price (PHP)<input id="pd-price" type="number" min="0" step="0.01" inputmode="decimal" required></label>
+      <label class="field">Reorder level<input id="pd-reorder" type="number" min="0" step="1" inputmode="numeric"></label>
+      <p class="form-group-title" id="pd-stock-title">First delivery (optional)</p>
+      <label class="field" id="pd-qty-wrap">Quantity<input id="pd-qty" type="number" min="1" step="1" inputmode="numeric"></label>
+      <label class="field" id="pd-exp-wrap">Expiry date<input id="pd-expiry" type="date"></label>
+    </div>
+    <datalist id="category-options"></datalist>
+    <p class="form-error" id="pd-error" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close>Cancel</button>
+      <button type="submit" class="btn primary" id="pd-save">Save product</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="batch-dialog" aria-labelledby="bd-title">
+  <div class="dialog-body">
+    <div class="dialog-head">
+      <div><h2 id="bd-title">Batches</h2><p class="muted" id="bd-sub"></p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Close"><i data-icon="x"></i></button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Batch</th><th class="num">Qty</th><th>Expiry</th><th>Received</th><th>Status</th><th></th></tr></thead>
+        <tbody id="bd-body"></tbody>
+      </table>
+      <div class="empty" id="bd-empty" hidden><strong>No stock on hand</strong>Receive a delivery below.</div>
+    </div>
+    <form id="batch-form" class="inline-form" novalidate>
+      <label class="field">Quantity received<input id="bd-qty" type="number" min="1" step="1" inputmode="numeric" required></label>
+      <label class="field">Expiry date<input id="bd-expiry" type="date"></label>
+      <button type="submit" class="btn primary">Receive stock</button>
+    </form>
+    <p class="form-error" id="bd-error" hidden></p>
+  </div>
+</dialog>
+
+<dialog id="checkout-dialog" aria-labelledby="co-title">
+  <form id="checkout-form" class="dialog-body" novalidate>
+    <div class="dialog-head">
+      <div><h2 id="co-title">Complete sale</h2><p class="muted">Choose how the customer pays.</p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Close"><i data-icon="x"></i></button>
+    </div>
+    <div class="pay-modes">
+      <label class="pay-card">
+        <input type="radio" name="pay-mode" value="cash" checked>
+        <span class="pay-card-body"><strong>Cash</strong><small>Paid now</small></span>
+      </label>
+      <label class="pay-card">
+        <input type="radio" name="pay-mode" value="utang">
+        <span class="pay-card-body"><strong>Utang</strong><small>Customer credit</small></span>
+      </label>
+    </div>
+    <div id="utang-fields" class="form-grid" hidden>
+      <label class="field full">Customer name<input id="co-customer" type="text" autocomplete="name" placeholder="Required for utang"></label>
+      <label class="field">Due date<input id="co-due" type="date"></label>
+      <label class="field full">Note (optional)<input id="co-note" type="text" placeholder="e.g. Weekly customer"></label>
+    </div>
+    <p class="checkout-total">Total: <strong id="co-total">0.00</strong></p>
+    <p class="form-error" id="co-error" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close>Cancel</button>
+      <button type="submit" class="btn primary" id="co-confirm">Confirm sale</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="refund-dialog" aria-labelledby="rf-title">
+  <form id="refund-form" class="dialog-body" novalidate>
+    <div class="dialog-head">
+      <div><h2 id="rf-title">Refund / return</h2><p class="muted" id="rf-sub"></p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Close"><i data-icon="x"></i></button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Item</th><th class="num">Sold</th><th class="num">Return qty</th></tr></thead>
+        <tbody id="rf-body"></tbody>
+      </table>
+    </div>
+    <label class="field full">Reason<input id="rf-reason" type="text" placeholder="Customer change of mind / damaged / wrong item"></label>
+    <p class="form-error" id="rf-error" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close>Cancel</button>
+      <button type="submit" class="btn primary" id="rf-confirm">Process refund</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="pay-utang-dialog" aria-labelledby="pu-title">
+  <form id="pay-utang-form" class="dialog-body" novalidate>
+    <div class="dialog-head">
+      <div><h2 id="pu-title">Record payment</h2><p class="muted" id="pu-sub"></p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Close"><i data-icon="x"></i></button>
+    </div>
+    <div class="form-grid">
+      <label class="field">Amount (PHP)<input id="pu-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
+      <label class="field full">Note (optional)<input id="pu-note" type="text"></label>
+    </div>
+    <p class="form-error" id="pu-error" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close>Cancel</button>
+      <button type="submit" class="btn primary">Save payment</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="extend-utang-dialog" aria-labelledby="eu-title">
+  <form id="extend-utang-form" class="dialog-body" novalidate>
+    <div class="dialog-head">
+      <div><h2 id="eu-title">Extend due date</h2><p class="muted" id="eu-sub"></p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Close"><i data-icon="x"></i></button>
+    </div>
+    <div class="form-grid">
+      <label class="field">New due date<input id="eu-due" type="date" required></label>
+      <label class="field">Or add days<input id="eu-days" type="number" min="1" max="365" step="1" inputmode="numeric" placeholder="e.g. 7"></label>
+      <label class="field full">Note (optional)<input id="eu-note" type="text" placeholder="e.g. Customer requested extra week"></label>
+    </div>
+    <p class="muted" style="font-size:.85rem;margin-top:4px">Leave “add days” blank to use the date above. If you type days, the date field is recalculated from the later of today and the current due.</p>
+    <p class="form-error" id="eu-error" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close>Cancel</button>
+      <button type="submit" class="btn primary">Extend due date</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-msg">
+  <form method="dialog" class="dialog-body">
+    <p id="confirm-msg" style="font-weight:600"></p>
+    <div class="dialog-actions">
+      <button type="submit" value="cancel" class="btn ghost">Cancel</button>
+      <button type="submit" value="ok" class="btn danger" id="confirm-ok">Confirm</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Print-only reorder sheet -->
+<div id="print-reorder" class="print-only" hidden></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/structures.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/calculator.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

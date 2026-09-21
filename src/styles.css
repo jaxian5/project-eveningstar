@@ -1,0 +1,180 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --bg: #f1eee6;
+  --surface: #fbf8f1;
+  --surface-2: #f3efe6;
+  --surface-3: #e8e2d6;
+  --fg: #1c2430;
+  --muted: #5d675c;
+  --fg-subtle: #8a8478;
+  --border: color-mix(in oklab, #1c2430 12%, transparent);
+  --ink: #12201c;
+  --accent: #1f5c4e;
+  --accent-hover: #18483d;
+  --accent-foreground: #f7f4ec;
+  --accent-soft: #e3efe9;
+  --ring: #1f5c4e;
+  --ok: #166534;
+  --ok-bg: #dcfce7;
+  --warn: #92400e;
+  --warn-bg: #f6e6c8;
+  --danger: #b42318;
+  --danger-fg: #fff8f6;
+  --danger-bg: #fde8e6;
+  --info: #1d4ed8;
+  --info-bg: #dbeafe;
+  --nav: #12201c;
+  --nav-ink: #e8f0ea;
+  --nav-muted: #9bb0a6;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --shadow-lift: 0 22px 50px rgba(18, 32, 28, 0.28);
+  --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display-family: "Fraunces", "DM Sans", Georgia, serif;
+  --motion-quick: 150ms;
+  --motion-fast: 250ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-theme="dark"] {
+  --bg: #0e1513;
+  --surface: #15201c;
+  --surface-2: #101a17;
+  --surface-3: #1c2a25;
+  --fg: #e9efe8;
+  --muted: #9aada4;
+  --fg-subtle: #7e9088;
+  --border: color-mix(in oklab, #e9efe8 12%, transparent);
+  --ink: #07110e;
+  --accent: #7dbaa6;
+  --accent-hover: #93cbb8;
+  --accent-foreground: #0d1714;
+  --accent-soft: #1a2e28;
+  --ring: #7dbaa6;
+  --ok: #86efac;
+  --ok-bg: #12351f;
+  --warn: #f0c674;
+  --warn-bg: #3a2b08;
+  --danger: #f0a8a0;
+  --danger-fg: #2a1010;
+  --danger-bg: #3a1a18;
+  --info: #93c5fd;
+  --info-bg: #172c52;
+  --nav: #0a1310;
+  --nav-ink: #e8f0ea;
+  --nav-muted: #8aa398;
+  --shadow-lift: 0 22px 50px rgba(0, 0, 0, 0.45);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-border: var(--border);
+  --color-ink: var(--ink);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-ring: var(--ring);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-danger: var(--danger);
+  --color-danger-fg: var(--danger-fg);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-nav: var(--nav);
+  --color-nav-ink: var(--nav-ink);
+  --color-nav-muted: var(--nav-muted);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display-family);
+  --shadow-lift: var(--shadow-lift);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  [data-theme="dark"] {
+    color-scheme: dark;
+  }
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body[data-print="reorder"] * {
+    visibility: hidden !important;
+  }
+  body[data-print="reorder"] #reorder-print,
+  body[data-print="reorder"] #reorder-print * {
+    visibility: visible !important;
+  }
+  body[data-print="reorder"] #reorder-print {
+    position: absolute;
+    inset: 0;
+    background: white;
+    color: #111;
+    padding: 16px;
+  }
+  body[data-print="slip"] * {
+    visibility: hidden !important;
+  }
+  body[data-print="slip"] #sales-slip,
+  body[data-print="slip"] #sales-slip * {
+    visibility: visible !important;
+  }
+  body[data-print="slip"] #sales-slip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 4mm;
+    background: white;
+    color: #111;
+    border: 0;
+  }
+}

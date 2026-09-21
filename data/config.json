@@ -1,0 +1,9 @@
+{
+  "store_name": "Sample Mini-Grocery",
+  "currency": "PHP",
+  "locale": "en-PH",
+  "expiry_warning_days": 14,
+  "default_reorder_level": 5,
+  "storage_key": "store-inventory-v3",
+  "slip_footer": "Thank you! This is a sales slip, not an official BIR receipt."
+}
