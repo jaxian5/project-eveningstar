@@ -2,22 +2,6 @@
 
 A small-grocery system built around one idea: **the batch that expires first is always the one you see first and the one you sell first (FEFO)**. It grew out of an interview with a mini-grocery owner whose hardest problem was products expiring unnoticed, plus manual billing with no itemized slip.
 
-## Run it
-
-**Easiest (loads all the data files):** open a terminal in this folder and run
-
-```
-python -m http.server 8000
-```
-
-then open <http://localhost:8000>. VS Code's "Live Server" works too.
-
-**Double-clicking `index.html`** also works, but browsers block reading `data/*.json` from disk. The app then loads a small built-in sample and shows a notice. Use **Import JSON** and choose `data/products.json` to load the full sample.
-
-Your changes are saved in the browser (localStorage). **Export JSON** makes a backup file you can hand in or reload.
-
-Tests: open `tests.html` (35 unit tests and a benchmark table), or run `node js/run-tests.js --bench`.
-
 ## Files
 
 | File | What it does |
