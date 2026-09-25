@@ -1821,3 +1821,400 @@ dialog[open] { animation: pop 0.18s ease-out; }
     animation: none !important;
   }
 }
+
+
+/* =========================================================
+   Responsive orientation pass
+   Keeps the existing desktop UI, but changes composition
+   based on available width AND portrait/landscape orientation.
+   Tables remain horizontally scrollable because their data is
+   genuinely tabular.
+   ========================================================= */
+
+/* Prevent accidental page-wide horizontal overflow. */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.main,
+.content,
+.view,
+.panel,
+.grid-main,
+.grid-billing,
+.grid-finance,
+.cards,
+.side-panels {
+  min-width: 0;
+}
+
+/* Give flexible grid children permission to shrink instead of
+   forcing the whole page wider than the viewport. */
+.grid-main > *,
+.grid-billing > *,
+.grid-finance > *,
+.cards > *,
+.panel,
+.panel-head > *,
+.toolbar > * {
+  min-width: 0;
+}
+
+/* Medium screens: use available width more aggressively. */
+@media (max-width: 1100px) {
+  .content {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .grid-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .grid-billing,
+  .grid-finance {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cards {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  }
+
+  .finance-charts,
+  .trend-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+/* =========================================================
+   Compact portrait
+   ========================================================= */
+@media (max-width: 700px) and (orientation: portrait) {
+  .content {
+    padding: 12px 10px 26px;
+    padding-bottom: max(26px, env(safe-area-inset-bottom));
+  }
+
+  .topbar {
+    min-height: 60px;
+  }
+
+  .topbar-left {
+    min-width: 0;
+  }
+
+  .topbar-left h1 {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar-right {
+    flex-shrink: 0;
+  }
+
+  .date-chip {
+    max-width: 34vw;
+  }
+
+  /* Summary cards become a clean vertical stack on narrow
+     portrait screens instead of creating cramped mini-cards. */
+  .cards {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .card {
+    padding: 13px 14px;
+  }
+
+  .card-value {
+    font-size: 1.3rem;
+  }
+
+  /* Panel headings stack, while actions become full-width. */
+  .panel-head {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 13px 14px 10px;
+  }
+
+  .panel-head .btn,
+  .panel-head .action-row {
+    width: 100%;
+  }
+
+  .action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .action-row .btn {
+    flex: 1 1 140px;
+  }
+
+  /* Filters become a vertical form. */
+  .toolbar {
+    flex-direction: column;
+    padding: 0 14px 12px;
+  }
+
+  .toolbar input,
+  .toolbar select {
+    width: 100%;
+    max-width: none;
+    flex: none;
+    min-height: 44px;
+  }
+
+  /* Keep tables usable. Only the table itself scrolls. */
+  .table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  table {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  th,
+  td {
+    padding: 10px 11px;
+  }
+
+  /* Billing rows are already semantically suited to stacking. */
+  .result-row {
+    padding: 13px 14px;
+  }
+
+  .sale-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sale-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .cart-total strong {
+    font-size: 1.35rem;
+  }
+
+  /* Charts need a little breathing room in portrait. */
+  .finance-charts,
+  .trend-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-block-wide {
+    grid-column: auto;
+  }
+
+  /* Forms/dialogs should never exceed the viewport. */
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid .full {
+    grid-column: auto;
+  }
+
+  dialog {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .compare-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .compare-row-label {
+    grid-column: auto;
+  }
+}
+
+/* =========================================================
+   Compact landscape
+   Phones in landscape have very little vertical space but
+   considerably more horizontal space. Use that horizontal
+   space instead of forcing everything into one tall column.
+   ========================================================= */
+@media (max-width: 900px) and (orientation: landscape) {
+  .content {
+    padding: 10px 14px 22px;
+    padding-bottom: max(22px, env(safe-area-inset-bottom));
+  }
+
+  .topbar {
+    padding-top: max(7px, env(safe-area-inset-top));
+    padding-bottom: 7px;
+    min-height: 52px;
+  }
+
+  .date-chip {
+    max-width: 32vw;
+    font-size: 0.72rem;
+  }
+
+  /* Two columns are useful again when landscape gives us room. */
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .grid-main,
+  .grid-billing,
+  .grid-finance {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  /* Inventory's side panels get a second column. */
+  .grid-main > .panel {
+    min-width: 0;
+  }
+
+  .side-panels {
+    min-width: 0;
+  }
+
+  /* Finance can use the wider landscape canvas. */
+  .finance-charts,
+  .trend-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Keep headings compact in landscape. */
+  .panel-head {
+    flex-direction: row;
+    align-items: center;
+    padding: 11px 14px 9px;
+  }
+
+  .panel-head .btn {
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  .toolbar {
+    flex-direction: row;
+    padding: 0 14px 10px;
+  }
+
+  .toolbar input,
+  .toolbar select {
+    min-width: 0;
+    min-height: 42px;
+  }
+
+  /* Preserve readable tables, but let only the table viewport
+     scroll when the dataset is intrinsically wider. */
+  .table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  /* Dialogs should use landscape height without becoming huge. */
+  dialog {
+    max-height: 92vh;
+  }
+
+  .dialog-body {
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+
+  .dialog-actions {
+    flex-direction: row;
+  }
+
+  .dialog-actions .btn {
+    width: auto;
+  }
+}
+
+/* =========================================================
+   Very narrow portrait phones
+   ========================================================= */
+@media (max-width: 380px) and (orientation: portrait) {
+  .content {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .topbar {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+
+  .topbar-right .date-chip {
+    display: none;
+  }
+
+  .panel-head {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .card {
+    padding: 11px 12px;
+  }
+
+  .btn {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* =========================================================
+   Short screens
+   Useful for landscape phones and split-screen windows.
+   ========================================================= */
+@media (max-height: 520px) {
+  .topbar {
+    padding-top: max(6px, env(safe-area-inset-top));
+    padding-bottom: 6px;
+  }
+
+  .content {
+    padding-top: 9px;
+  }
+
+  .card {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .panel {
+    margin-bottom: 12px;
+  }
+
+  .panel-head {
+    padding-top: 10px;
+    padding-bottom: 8px;
+  }
+}
+
+/* Touch devices: prevent horizontal gestures from stealing the
+   page scroll except inside deliberately scrollable tables. */
+@media (hover: none) and (pointer: coarse) {
+  .table-wrap {
+    touch-action: pan-x pan-y;
+  }
+
+  .content {
+    overscroll-behavior-x: none;
+  }
+}
